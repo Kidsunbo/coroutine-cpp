@@ -141,6 +141,7 @@ namespace kiedis
             result.push(sock);
             sock = accept(fd, reinterpret_cast<sockaddr *>(&address), &len);
         }
+
         return true;
     }
 

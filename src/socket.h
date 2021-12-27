@@ -23,8 +23,8 @@ namespace kiedis
         Socket(Socket&& socket);
         ~Socket()noexcept;
 
-        bool connect(std::string_view ip, unsigned int port);
-        bool bind(unsigned int port);
+        bool connect(std::string_view ip, unsigned short port);
+        bool bind(unsigned short port, int listen_max = 1024);
 
         AcceptFuture accept();
         ReadFuture read();
