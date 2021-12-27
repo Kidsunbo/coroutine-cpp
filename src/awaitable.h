@@ -9,6 +9,7 @@
 #include <tuple>
 
 #include <iostream>
+#include <thread>
 
 namespace kiedis
 {
@@ -16,12 +17,12 @@ namespace kiedis
     {
         std::string result;
         std::array<char, 1024> buf;
-        std::coroutine_handle<> handle;
+        std::coroutine_handle<>& handle;
         const int fd;
         bool need_suspend = true;
         bool connection_close = false;
 
-        explicit ReadFuture(int fd);
+        explicit ReadFuture(int fd, std::coroutine_handle<>& h);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<std::string, bool> await_resume();
@@ -31,13 +32,13 @@ namespace kiedis
     struct WriteFuture
     {
         std::string content;
-        std::coroutine_handle<> handle;
+        std::coroutine_handle<>& handle;
         const int fd;
         bool need_suspend = true;
         bool connection_close = false;
         unsigned long total_write = 0;
 
-        WriteFuture(int fd, std::string content);
+        WriteFuture(int fd, std::coroutine_handle<>& h, std::string content);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<unsigned long, bool> await_resume();
@@ -46,13 +47,12 @@ namespace kiedis
 
     struct AcceptFuture
     {
-        std::coroutine_handle<> handle;
         const int fd;
         bool need_suspend = true;
         bool connection_close = false;
         std::queue<int> result;
 
-        explicit AcceptFuture(int fd);
+        AcceptFuture(int fd);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<int, bool> await_resume(); //return value: socket_fd, remote ip, remote port, success.

@@ -12,8 +12,6 @@ namespace kiedis
 
     class Socket {
         int socket_fd;
-        std::string remote_ip;
-        unsigned int port;
         IOContext& ctx;
         std::coroutine_handle<> read_co_handle;
         std::coroutine_handle<> write_co_handle;
@@ -30,7 +28,7 @@ namespace kiedis
 
         AcceptFuture accept();
         ReadFuture read();
-        WriteFuture write();
+        WriteFuture write(const std::string& content);
 
         void resume_read();
         void resume_write();

@@ -6,7 +6,7 @@
 namespace kiedis
 {
 
-    ReadFuture::ReadFuture(int fd) : fd(fd) {}
+    ReadFuture::ReadFuture(int fd, std::coroutine_handle<> &h) : fd(fd), handle(h) {}
 
     // For now, there is no optimization here, always call await_suspend anyway.
     bool ReadFuture::await_ready()
@@ -58,7 +58,7 @@ namespace kiedis
         return !connection_close;
     }
 
-    WriteFuture::WriteFuture(int fd, std::string content) : fd(fd), content(std::move(content)) {}
+    WriteFuture::WriteFuture(int fd, std::coroutine_handle<> &h, std::string content) : fd(fd), content(std::move(content)), handle(h) {}
 
     bool WriteFuture::await_ready()
     {
@@ -128,8 +128,6 @@ namespace kiedis
 
     bool AcceptFuture::await_suspend(std::coroutine_handle<> h)
     {
-        handle = h;
-
         sockaddr_in address{};
         socklen_t len;
         auto sock = accept(fd, reinterpret_cast<sockaddr *>(&address), &len);
@@ -150,14 +148,14 @@ namespace kiedis
     {
         if (connection_close)
         {
-            return {0,false};
+            return {0, false};
         }
         sockaddr_in address{};
         socklen_t len;
         auto sock = accept(fd, reinterpret_cast<sockaddr *>(&address), &len);
         if (sock <= 0 && result.empty())
         {
-            return {0,false};
+            return {0, false};
         }
         while (sock > 0 && (errno != EAGAIN && errno != EWOULDBLOCK))
         {
