@@ -24,7 +24,7 @@ namespace kiedis
     {
     }
 
-    Socket::Socket(IOContext &ctx, int fd) : ctx(ctx), socket_fd(fd)
+    Socket::Socket(IOContext &ctx, int fd) : ctx(ctx), socket_fd(fd), read_co_handle(std::noop_coroutine()), write_co_handle(std::noop_coroutine())
     {
         set_non_blocking(socket_fd);
     }
@@ -36,13 +36,7 @@ namespace kiedis
 
     Socket::~Socket() noexcept
     {
-        if (read_co_handle)
-        {
-            read_co_handle.destroy();
-        }
-        if(write_co_handle){
-            read_co_handle.destroy();
-        }
+        //No need to destroy read_co_handle and write_co_handle because it's lifetime is handled by the Task of the coroutine state. Or double free will occur.
     }
 
     bool Socket::connect(std::string_view ip, unsigned int port)

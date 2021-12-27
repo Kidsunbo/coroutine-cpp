@@ -16,7 +16,6 @@ namespace kiedis
 
     bool ReadFuture::await_suspend(std::coroutine_handle<> h)
     {
-        handle = h;
         auto ret = recv(fd, buf.data(), buf.size(), 0);
         if (ret == 0)
         {
@@ -29,6 +28,7 @@ namespace kiedis
             need_suspend = false;
             ret = recv(fd, buf.data(), buf.size(), 0);
         }
+        handle = h; // public the coroutine handler here so that the resume triggered by the above code in another thread will not call await_resume and the destructor.
         return need_suspend;
     }
 
@@ -67,7 +67,6 @@ namespace kiedis
 
     bool WriteFuture::await_suspend(std::coroutine_handle<> h)
     {
-        handle = h;
         auto ret = send(fd, content.data(), content.size(), 0);
         if (ret == 0)
         {
@@ -84,6 +83,7 @@ namespace kiedis
             }
             ret = send(fd, content.data() + total_write, content.size() - total_write, 0);
         }
+        handle = h; // public the coroutine handler here so that the resume triggered by the above code in another thread will not call await_resume and the destructor.
         return need_suspend;
     }
 
