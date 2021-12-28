@@ -26,16 +26,12 @@ kiedis::Task<void> accept(kiedis::Socket &socket)
 {
     while (true)
     {
-        std::cout<<"【accept】before accept"<<std::endl;
-
         auto [sock_fd, ok] = co_await socket.accept();
         if (!ok)
         {
             std::cout << "failed to accept" << std::endl;
             continue;
         }
-        std::cout<<"【accept】after accept "<<sock_fd<<std::endl;
-
         auto ptr = new kiedis::Socket(socket.get_context(), sock_fd);
         kiedis::co_spawn(ptr, echo(*ptr));
     }
@@ -47,7 +43,6 @@ int main()
     kiedis::Socket socket(ctx);
     socket.bind(8080);
     kiedis::co_spawn(socket, accept(socket));
-    std::cout<<"【main】after accept, "<<&socket<<std::endl;
     ctx.run();
 
     return 0;

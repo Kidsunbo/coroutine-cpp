@@ -17,7 +17,7 @@ namespace kiedis
     bool ReadFuture::await_suspend(std::coroutine_handle<> h)
     {
         handle = h; // public the coroutine handler here so that the resume triggered by the above code in another thread will not call await_resume and the destructor.
-        return need_suspend;
+        return true;
     }
 
     std::tuple<std::string, bool> ReadFuture::await_resume()
@@ -26,7 +26,7 @@ namespace kiedis
         {
             return {"", false};
         }
-
+        std::array<char, 1024> buf;
         auto ret = recv(fd, buf.data(), buf.size(), 0);
         {
             connection_close = true;
@@ -81,7 +81,7 @@ namespace kiedis
 
     bool AcceptFuture::await_ready()
     {
-        return !result.empty();
+        return false;
     }
 
     bool AcceptFuture::await_suspend(std::coroutine_handle<> h)
