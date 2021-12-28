@@ -22,7 +22,7 @@ namespace kiedis
     void IOContext::run()
     {
         std::array<epoll_event, 256> events;
-        while (!stop)
+        for(int i=0;i<10;i++)
         {
             auto fd_count = epoll_wait(this->epoll_fd, events.data(), events.size(), timeout);
             if (fd_count == -1)
