@@ -8,8 +8,6 @@
 #include <queue>
 #include <tuple>
 
-#include <iostream>
-#include <thread>
 
 namespace kiedis
 {
@@ -64,17 +62,14 @@ namespace kiedis
     {
         bool await_ready()
         {
-            std::cout << "await_ready()" << std::endl;
             return false;
         }
         bool await_suspend(std::coroutine_handle<> h)
         {
-            std::cout << "await_suspend()" << std::endl;
             return true;
         }
         int await_resume()
         {
-            std::cout << "await_resume()" << std::endl;
             return 10;
         }
     };

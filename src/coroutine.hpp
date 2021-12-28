@@ -4,8 +4,6 @@
 #include <coroutine>
 #include <utility>
 
-#include <iostream>
-
 namespace kiedis
 {
     template <typename T>
@@ -104,7 +102,6 @@ namespace kiedis
 
         ~Task() noexcept
         {
-            std::cout << "~Task" << std::endl;
             if (co_handle)
             {
                 co_handle.destroy();

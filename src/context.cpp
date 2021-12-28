@@ -30,15 +30,17 @@ namespace kiedis
                 last_word = strerror(errno);
                 return;
             }
-
             for (std::size_t i = 0; i < fd_count; i++)
             {
                 auto sock = static_cast<Socket *>(events[i].data.ptr);
                 if (events[i].events & EPOLLIN)
                 {
-                    if(sock->is_server()){
+                    if (sock->is_server())
+                    {
                         sock->resume_accpet();
-                    }else{
+                    }
+                    else
+                    {
                         sock->resume_read();
                     }
                 }
@@ -55,13 +57,58 @@ namespace kiedis
         return last_word;
     }
 
-    void IOContext::add(std::unique_ptr<Socket> sock)
+    void IOContext::add(Socket *sock)
     {
-
+        epoll_event ev{};
+        ev.data.ptr = sock;
+        ev.events = EPOLLIN | EPOLLOUT;
+        if (auto ret = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock->socket_fd, &ev); ret < 0)
+        {
+            std::terminate();
+        }
+        connections.push_back(std::unique_ptr<Socket>(sock));
     }
 
     void IOContext::remove(Socket *sock)
     {
+        epoll_event ev{};
+        ev.data.ptr = sock;
+        ev.events = EPOLLIN | EPOLLOUT;
+        if (auto ret = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, sock->socket_fd, &ev); ret < 0)
+        {
+            std::terminate();
+        }
+        for (auto iter = connections.begin(); iter != connections.end(); iter++)
+        {
+            if (iter->get() == sock)
+            {
+                connections.erase(iter);
+                break;
+            }
+        }
+    }
+
+    void co_spawn(Socket *ptr, Task<void> &&t)
+    {
+        ptr->long_live_task = std::move(t);
+        ptr->get_context().add(ptr);
+    }
+
+    void co_spawn(std::unique_ptr<Socket> ptr, Task<void> &&t)
+    {
+        co_spawn(ptr.release(), std::move(t));
+    }
+
+    void co_spawn(Socket &sock, Task<void> &&t)
+    {
+        sock.long_live_task = std::move(t);
+        epoll_event ev{};
+        ev.data.ptr = &sock;
+        ev.events = EPOLLIN | EPOLLOUT;
+        if (auto ret = epoll_ctl(sock.get_context().epoll_fd, EPOLL_CTL_ADD, sock.socket_fd, &ev); ret < 0)
+        {
+            std::terminate();
+        }
     }
 
 } // namespace kiedis

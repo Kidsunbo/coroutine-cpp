@@ -11,6 +11,11 @@ namespace kiedis
     class IOContext;
 
     class Socket {
+        friend class IOContext;
+        friend void co_spawn(Socket *ptr, Task<void> &&t);
+        friend void co_spawn(std::unique_ptr<Socket> ptr, Task<void> &&t);
+        friend void co_spawn(Socket &sock, Task<void> &&t);
+
         int socket_fd;
         IOContext& ctx;
         Task<void> long_live_task;
@@ -29,7 +34,6 @@ namespace kiedis
         bool connect(std::string_view ip, unsigned short port);
         bool bind(unsigned short port, int listen_max = 1024);
         IOContext& get_context();
-        void spawn(Task<void>&& t);
 
         AcceptFuture accept();
         ReadFuture read();

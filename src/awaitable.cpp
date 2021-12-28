@@ -16,18 +16,6 @@ namespace kiedis
 
     bool ReadFuture::await_suspend(std::coroutine_handle<> h)
     {
-        auto ret = recv(fd, buf.data(), buf.size(), 0);
-        if (ret == 0)
-        {
-            connection_close = true;
-            return false;
-        }
-        while (ret > 0 && (errno != EAGAIN && errno != EWOULDBLOCK))
-        {
-            result.append(std::string{buf.data(), static_cast<unsigned long>(ret)});
-            need_suspend = false;
-            ret = recv(fd, buf.data(), buf.size(), 0);
-        }
         handle = h; // public the coroutine handler here so that the resume triggered by the above code in another thread will not call await_resume and the destructor.
         return need_suspend;
     }
@@ -38,19 +26,16 @@ namespace kiedis
         {
             return {"", false};
         }
-        if (need_suspend)
+
+        auto ret = recv(fd, buf.data(), buf.size(), 0);
         {
-            auto ret = recv(fd, buf.data(), buf.size(), 0);
-            {
-                connection_close = true;
-            }
-            while (ret > 0 && (errno != EAGAIN || errno != EWOULDBLOCK))
-            {
-                result.append(std::string{buf.data(), static_cast<unsigned long>(ret)});
-                ret = recv(fd, buf.data(), buf.size(), 0);
-            }
+            connection_close = true;
         }
-        return {std::move(result), true};
+        if (ret <= 0)
+        {
+            return {"", false};
+        };
+        return {std::string{buf.data(), static_cast<unsigned long>(ret)}, true};
     }
 
     bool ReadFuture::valid()
@@ -67,24 +52,8 @@ namespace kiedis
 
     bool WriteFuture::await_suspend(std::coroutine_handle<> h)
     {
-        auto ret = send(fd, content.data(), content.size(), 0);
-        if (ret == 0)
-        {
-            connection_close = true;
-            return false;
-        }
-        while (total_write < content.size() && ret > 0 && (errno != EAGAIN && errno != EWOULDBLOCK))
-        {
-            total_write += ret;
-            if (total_write >= content.size())
-            {
-                need_suspend = false;
-                break;
-            }
-            ret = send(fd, content.data() + total_write, content.size() - total_write, 0);
-        }
         handle = h; // public the coroutine handler here so that the resume triggered by the above code in another thread will not call await_resume and the destructor.
-        return need_suspend;
+        return true;
     }
 
     std::tuple<unsigned long, bool> WriteFuture::await_resume()
@@ -93,25 +62,14 @@ namespace kiedis
         {
             return {0, false};
         }
-        if (need_suspend)
+        auto ret = send(fd, content.data(), content.size(), 0);
+        if (ret == 0)
         {
-            auto ret = send(fd, content.data() + total_write, content.size() - total_write, 0);
-            if (ret == 0)
-            {
-                connection_close = true;
-                return {0, false};
-            }
-            while (total_write < content.size() && ret > 0 && (errno != EAGAIN && errno != EWOULDBLOCK))
-            {
-                total_write += ret;
-                if (total_write >= content.size())
-                {
-                    break;
-                }
-                ret = send(fd, content.data() + total_write, content.size() - total_write, 0);
-            }
+            connection_close = true;
+            return {0, false};
         }
-        return {total_write, true};
+
+        return {ret, true};
     }
 
     bool WriteFuture::valid()
@@ -119,7 +77,7 @@ namespace kiedis
         return !connection_close;
     }
 
-    AcceptFuture::AcceptFuture(int fd, std::coroutine_handle<>& h) : fd(fd), handle(h) {}
+    AcceptFuture::AcceptFuture(int fd, std::coroutine_handle<> &h) : fd(fd), handle(h) {}
 
     bool AcceptFuture::await_ready()
     {
@@ -128,44 +86,25 @@ namespace kiedis
 
     bool AcceptFuture::await_suspend(std::coroutine_handle<> h)
     {
-        sockaddr_in address{};
-        socklen_t len;
-        auto sock = accept(fd, reinterpret_cast<sockaddr *>(&address), &len);
-        if (sock == 0)
-        {
-            connection_close = true;
-            return false;
-        }
-        while (sock > 0 && (errno != EAGAIN && errno != EWOULDBLOCK))
-        {
-            result.push(sock);
-            sock = accept(fd, reinterpret_cast<sockaddr *>(&address), &len);
-        }
         handle = h; // public the coroutine handler here so that the resume triggered by the above code in another thread will not call await_resume and the destructor.
         return true;
     }
 
     std::tuple<int, bool> AcceptFuture::await_resume()
     {
+
         if (connection_close)
         {
             return {0, false};
         }
         sockaddr_in address{};
-        socklen_t len;
-        auto sock = accept(fd, reinterpret_cast<sockaddr *>(&address), &len);
-        if (sock <= 0 && result.empty())
+        socklen_t len = 0;
+        auto sock = accept(fd, reinterpret_cast<sockaddr*>(&address), &len);
+        if (sock <= 0)
         {
             return {0, false};
         }
-        while (sock > 0 && (errno != EAGAIN && errno != EWOULDBLOCK))
-        {
-            result.push(sock);
-            sock = accept(fd, reinterpret_cast<sockaddr *>(&address), &len);
-        }
-        auto ret = result.front();
-        result.pop();
-        return {ret, true};
+        return {sock, true};
     }
 
     bool AcceptFuture::valid()

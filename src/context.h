@@ -8,14 +8,18 @@
 #include <list>
 #include <memory>
 #include <string>
-
+#include "coroutine.hpp"
 
 namespace kiedis
 {
     class Socket;
-
     class IOContext
     {
+        friend class Socket;
+        friend void co_spawn(Socket *ptr, Task<void> &&t);
+        friend void co_spawn(std::unique_ptr<Socket> ptr, Task<void> &&t);
+        friend void co_spawn(Socket &sock, Task<void> &&t);
+
         const int epoll_fd;
         std::list<std::unique_ptr<Socket>> connections;
         bool stop;
@@ -25,15 +29,20 @@ namespace kiedis
     public:
         explicit IOContext(int timeout = -1);
         ~IOContext() noexcept;
-        IOContext(const IOContext&) = delete;
-        IOContext(IOContext&& ctx);
+        IOContext(const IOContext &) = delete;
+        IOContext(IOContext &&ctx);
         void run();
         const std::string &get_last_word();
 
     private:
-        void add(std::unique_ptr<Socket> sock);
+        void add(Socket *sock);
         void remove(Socket *sock);
     };
+
+    void co_spawn(Socket *ptr, Task<void> &&t);
+    void co_spawn(std::unique_ptr<Socket> ptr, Task<void> &&t);
+    void co_spawn(Socket &sock, Task<void> &&t);
+
 } // namespace kiedis
 
 #endif

@@ -2,6 +2,8 @@
 #include "utils.h"
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/epoll.h>
+#include "context.h"
 
 namespace kiedis
 {
@@ -19,6 +21,13 @@ namespace kiedis
         if (!write_co_handle.done())
         {
             write_co_handle.resume();
+        }
+        epoll_event ev{};
+        ev.data.ptr = this;
+        ev.events =  EPOLLIN;
+        if (auto ret = epoll_ctl(this->get_context().epoll_fd, EPOLL_CTL_MOD, this->socket_fd, &ev); ret < 0)
+        {
+            std::terminate();
         }
     }
 
@@ -106,20 +115,18 @@ namespace kiedis
             return false;
         }
         this->_is_server = true;
+        
         return true;
     }
 
-    bool Socket::is_server(){
+    bool Socket::is_server()
+    {
         return _is_server;
     }
 
     IOContext &Socket::get_context()
     {
         return ctx;
-    }
-
-    void Socket::spawn(Task<void> &&t){
-        this->long_live_task = std::move(t);
     }
 
     AcceptFuture Socket::accept()
