@@ -13,11 +13,8 @@ namespace kiedis
 {
     struct ReadFuture
     {
-        std::string result;
-        std::array<char, 1024> buf;
         std::coroutine_handle<> &handle;
         const int fd;
-        bool need_suspend = true;
         bool connection_close = false;
 
         explicit ReadFuture(int fd, std::coroutine_handle<> &h);
@@ -32,9 +29,7 @@ namespace kiedis
         std::string content;
         std::coroutine_handle<> &handle;
         const int fd;
-        bool need_suspend = true;
         bool connection_close = false;
-        unsigned long total_write = 0;
 
         WriteFuture(int fd, std::coroutine_handle<> &h, std::string content);
         bool await_ready();
@@ -47,9 +42,7 @@ namespace kiedis
     {
         const int fd;
         std::coroutine_handle<> &handle;
-        bool need_suspend = true;
         bool connection_close = false;
-        std::queue<int> result;
 
         AcceptFuture(int fd, std::coroutine_handle<> &h);
         bool await_ready();
