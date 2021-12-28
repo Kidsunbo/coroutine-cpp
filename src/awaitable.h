@@ -17,12 +17,12 @@ namespace kiedis
     {
         std::string result;
         std::array<char, 1024> buf;
-        std::coroutine_handle<>& handle;
+        std::coroutine_handle<> &handle;
         const int fd;
         bool need_suspend = true;
         bool connection_close = false;
 
-        explicit ReadFuture(int fd, std::coroutine_handle<>& h);
+        explicit ReadFuture(int fd, std::coroutine_handle<> &h);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<std::string, bool> await_resume();
@@ -32,13 +32,13 @@ namespace kiedis
     struct WriteFuture
     {
         std::string content;
-        std::coroutine_handle<>& handle;
+        std::coroutine_handle<> &handle;
         const int fd;
         bool need_suspend = true;
         bool connection_close = false;
         unsigned long total_write = 0;
 
-        WriteFuture(int fd, std::coroutine_handle<>& h, std::string content);
+        WriteFuture(int fd, std::coroutine_handle<> &h, std::string content);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<unsigned long, bool> await_resume();
@@ -48,16 +48,35 @@ namespace kiedis
     struct AcceptFuture
     {
         const int fd;
-        std::coroutine_handle<>& handle;
+        std::coroutine_handle<> &handle;
         bool need_suspend = true;
         bool connection_close = false;
         std::queue<int> result;
 
-        AcceptFuture(int fd, std::coroutine_handle<>& h);
+        AcceptFuture(int fd, std::coroutine_handle<> &h);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
-        std::tuple<int, bool> await_resume(); //return value: socket_fd, remote ip, remote port, success.
+        std::tuple<int, bool> await_resume(); // return value: socket_fd, remote ip, remote port, success.
         bool valid();
+    };
+
+    struct Awaitable
+    {
+        bool await_ready()
+        {
+            std::cout << "await_ready()" << std::endl;
+            return false;
+        }
+        bool await_suspend(std::coroutine_handle<> h)
+        {
+            std::cout << "await_suspend()" << std::endl;
+            return true;
+        }
+        int await_resume()
+        {
+            std::cout << "await_resume()" << std::endl;
+            return 10;
+        }
     };
 
 } // namespace kiedis

@@ -36,7 +36,11 @@ namespace kiedis
                 auto sock = static_cast<Socket *>(events[i].data.ptr);
                 if (events[i].events & EPOLLIN)
                 {
-                    sock->resume_read();
+                    if(sock->is_server()){
+                        sock->resume_accpet();
+                    }else{
+                        sock->resume_read();
+                    }
                 }
                 if (events[i].events & EPOLLOUT)
                 {

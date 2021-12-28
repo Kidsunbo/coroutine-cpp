@@ -34,11 +34,13 @@ namespace kiedis
     {
     }
 
-    Socket::Socket(IOContext &ctx, int fd) : ctx(ctx), socket_fd(fd), read_co_handle(std::noop_coroutine()), write_co_handle(std::noop_coroutine()), accept_co_handle(std::noop_coroutine())
+    Socket::Socket(IOContext &ctx, int fd) : ctx(ctx), socket_fd(fd), read_co_handle(std::noop_coroutine()), write_co_handle(std::noop_coroutine()), accept_co_handle(std::noop_coroutine()), long_live_task(Task<void>(nullptr))
     {
-        if(fd == 0){
+        if (fd == 0)
+        {
             auto sock = socket(AF_INET, SOCK_STREAM, 0);
-            if(sock <= 0){
+            if (sock <= 0)
+            {
                 return;
             }
             socket_fd = sock;
@@ -46,7 +48,7 @@ namespace kiedis
         set_non_blocking(socket_fd);
     }
 
-    Socket::Socket(Socket &&socket) : ctx(socket.ctx), socket_fd(socket.socket_fd), read_co_handle(socket.read_co_handle), write_co_handle(socket.write_co_handle), accept_co_handle(socket.accept_co_handle)
+    Socket::Socket(Socket &&socket) : ctx(socket.ctx), socket_fd(socket.socket_fd), read_co_handle(socket.read_co_handle), write_co_handle(socket.write_co_handle), accept_co_handle(socket.accept_co_handle), long_live_task(std::move(socket.long_live_task))
     {
         socket.socket_fd = 0;
     }
@@ -103,14 +105,22 @@ namespace kiedis
         {
             return false;
         }
-
+        this->_is_server = true;
         return true;
     }
 
-    IOContext& Socket::get_context(){
+    bool Socket::is_server(){
+        return _is_server;
+    }
+
+    IOContext &Socket::get_context()
+    {
         return ctx;
     }
 
+    void Socket::spawn(Task<void> &&t){
+        this->long_live_task = std::move(t);
+    }
 
     AcceptFuture Socket::accept()
     {

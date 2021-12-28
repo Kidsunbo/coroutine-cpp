@@ -3,15 +3,22 @@
 
 #include <iostream>
 
+kiedis::Task<void> get()
+{
+    for (int i = 0; i < 10; i++)
+    {
+        std::cout << "Before " << i << std::endl;
+        auto j = co_await kiedis::Awaitable{};
+        std::cout << "After " << i << std::endl;
+    }
+}
 
 int main()
 {
-    std::coroutine_handle<> h;
-    std::cout<<std::boolalpha<<bool(h)<<std::endl;
-
-    h = std::noop_coroutine();
-    std::cout<<std::boolalpha<<bool(h)<<std::endl;
-    std::cout<<std::boolalpha<<h.done()<<std::endl;
+    for (auto i = 0; i < 10; i++)
+    {
+        auto t = get();
+    }
 
     return 0;
 }

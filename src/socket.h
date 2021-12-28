@@ -13,6 +13,8 @@ namespace kiedis
     class Socket {
         int socket_fd;
         IOContext& ctx;
+        Task<void> long_live_task;
+        bool _is_server = false;
         std::coroutine_handle<> read_co_handle;
         std::coroutine_handle<> write_co_handle;
         std::coroutine_handle<> accept_co_handle;
@@ -27,6 +29,7 @@ namespace kiedis
         bool connect(std::string_view ip, unsigned short port);
         bool bind(unsigned short port, int listen_max = 1024);
         IOContext& get_context();
+        void spawn(Task<void>&& t);
 
         AcceptFuture accept();
         ReadFuture read();
@@ -35,6 +38,7 @@ namespace kiedis
         void resume_read();
         void resume_write();
         void resume_accpet();
+        bool is_server();
     };
 } // namespace kiedis
 
