@@ -22,16 +22,31 @@ namespace kiedis
         }
     }
 
+    void Socket::resume_accpet()
+    {
+        if (!accept_co_handle.done())
+        {
+            accept_co_handle.resume();
+        }
+    }
+
     Socket::Socket(IOContext &ctx) : Socket(ctx, 0)
     {
     }
 
-    Socket::Socket(IOContext &ctx, int fd) : ctx(ctx), socket_fd(fd), read_co_handle(std::noop_coroutine()), write_co_handle(std::noop_coroutine())
+    Socket::Socket(IOContext &ctx, int fd) : ctx(ctx), socket_fd(fd), read_co_handle(std::noop_coroutine()), write_co_handle(std::noop_coroutine()), accept_co_handle(std::noop_coroutine())
     {
+        if(fd == 0){
+            auto sock = socket(AF_INET, SOCK_STREAM, 0);
+            if(sock <= 0){
+                return;
+            }
+            socket_fd = sock;
+        }
         set_non_blocking(socket_fd);
     }
 
-    Socket::Socket(Socket &&socket) : ctx(socket.ctx), socket_fd(socket.socket_fd), read_co_handle(socket.read_co_handle), write_co_handle(socket.write_co_handle)
+    Socket::Socket(Socket &&socket) : ctx(socket.ctx), socket_fd(socket.socket_fd), read_co_handle(socket.read_co_handle), write_co_handle(socket.write_co_handle), accept_co_handle(socket.accept_co_handle)
     {
         socket.socket_fd = 0;
     }
@@ -43,7 +58,7 @@ namespace kiedis
 
     bool Socket::connect(std::string_view ip, unsigned short port)
     {
-        if (socket_fd != 0)
+        if (socket_fd == 0)
         {
             return false;
         }
@@ -57,7 +72,7 @@ namespace kiedis
             return false;
         }
 
-        if (::connect(socket_fd, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0)
+        if (::connect(socket_fd, reinterpret_cast<sockaddr *>(&address), sizeof(address)) < 0)
         {
             return false;
         }
@@ -66,7 +81,7 @@ namespace kiedis
     }
     bool Socket::bind(unsigned short port, int listen_max)
     {
-        if (socket_fd != 0)
+        if (socket_fd == 0)
         {
             return false;
         }
@@ -92,9 +107,14 @@ namespace kiedis
         return true;
     }
 
+    IOContext& Socket::get_context(){
+        return ctx;
+    }
+
+
     AcceptFuture Socket::accept()
     {
-        return AcceptFuture{socket_fd};
+        return AcceptFuture{socket_fd, accept_co_handle};
     }
     ReadFuture Socket::read()
     {

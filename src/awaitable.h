@@ -48,11 +48,12 @@ namespace kiedis
     struct AcceptFuture
     {
         const int fd;
+        std::coroutine_handle<>& handle;
         bool need_suspend = true;
         bool connection_close = false;
         std::queue<int> result;
 
-        AcceptFuture(int fd);
+        AcceptFuture(int fd, std::coroutine_handle<>& h);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<int, bool> await_resume(); //return value: socket_fd, remote ip, remote port, success.

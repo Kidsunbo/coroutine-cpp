@@ -4,6 +4,8 @@
 #include <coroutine>
 #include <utility>
 
+#include <iostream>
+
 namespace kiedis
 {
     template <typename T>

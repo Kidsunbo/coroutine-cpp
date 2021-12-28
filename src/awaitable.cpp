@@ -119,7 +119,7 @@ namespace kiedis
         return !connection_close;
     }
 
-    AcceptFuture::AcceptFuture(int fd) : fd(fd) {}
+    AcceptFuture::AcceptFuture(int fd, std::coroutine_handle<>& h) : fd(fd), handle(h) {}
 
     bool AcceptFuture::await_ready()
     {
@@ -141,7 +141,7 @@ namespace kiedis
             result.push(sock);
             sock = accept(fd, reinterpret_cast<sockaddr *>(&address), &len);
         }
-
+        handle = h; // public the coroutine handler here so that the resume triggered by the above code in another thread will not call await_resume and the destructor.
         return true;
     }
 

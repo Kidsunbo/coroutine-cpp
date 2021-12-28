@@ -15,6 +15,7 @@ namespace kiedis
         IOContext& ctx;
         std::coroutine_handle<> read_co_handle;
         std::coroutine_handle<> write_co_handle;
+        std::coroutine_handle<> accept_co_handle;
 
         public:
         
@@ -25,6 +26,7 @@ namespace kiedis
 
         bool connect(std::string_view ip, unsigned short port);
         bool bind(unsigned short port, int listen_max = 1024);
+        IOContext& get_context();
 
         AcceptFuture accept();
         ReadFuture read();
@@ -32,7 +34,7 @@ namespace kiedis
 
         void resume_read();
         void resume_write();
-        
+        void resume_accpet();
     };
 } // namespace kiedis
 
