@@ -33,6 +33,11 @@ namespace kiedis
             for (std::size_t i = 0; i < fd_count; i++)
             {
                 auto sock = static_cast<Socket *>(events[i].data.ptr);
+                if(events[i].events & EPOLLHUP || events[i].events & EPOLLERR){
+                    close(sock->socket_fd);
+                    remove(sock);
+                    continue;
+                }
                 if (events[i].events & EPOLLIN)
                 {
                     if (sock->is_server())
@@ -61,7 +66,7 @@ namespace kiedis
     {
         epoll_event ev{};
         ev.data.ptr = sock;
-        ev.events = EPOLLIN | EPOLLOUT;
+        ev.events = EPOLLIN;
         if (auto ret = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock->socket_fd, &ev); ret < 0)
         {
             std::terminate();
@@ -71,13 +76,6 @@ namespace kiedis
 
     void IOContext::remove(Socket *sock)
     {
-        epoll_event ev{};
-        ev.data.ptr = sock;
-        ev.events = EPOLLIN | EPOLLOUT;
-        if (auto ret = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, sock->socket_fd, &ev); ret < 0)
-        {
-            std::terminate();
-        }
         for (auto iter = connections.begin(); iter != connections.end(); iter++)
         {
             if (iter->get() == sock)
@@ -104,7 +102,7 @@ namespace kiedis
         sock.long_live_task = std::move(t);
         epoll_event ev{};
         ev.data.ptr = &sock;
-        ev.events = EPOLLIN | EPOLLOUT;
+        ev.events = EPOLLIN;
         if (auto ret = epoll_ctl(sock.get_context().epoll_fd, EPOLL_CTL_ADD, sock.socket_fd, &ev); ret < 0)
         {
             std::terminate();

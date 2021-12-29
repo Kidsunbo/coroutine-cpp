@@ -11,6 +11,7 @@ kiedis::Task<void> echo(kiedis::Socket &socket)
         if (!ok_read)
         {
             std::cout<<"Failed to read"<<std::endl;
+            
             co_return;
         }
         auto [size, ok_write] = co_await socket.write(content);

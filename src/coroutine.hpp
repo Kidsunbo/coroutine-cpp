@@ -23,7 +23,7 @@ namespace kiedis
             }
             auto final_suspend() noexcept
             {
-                return std::suspend_always{};
+                return std::suspend_never{};
             }
             void return_value(T t)
             {
@@ -39,10 +39,6 @@ namespace kiedis
         Task(std::coroutine_handle<promise_type> handle) : co_handle(handle) {}
         ~Task() noexcept
         {
-            if (co_handle)
-            {
-                co_handle.destroy();
-            }
         }
         bool next()
         {
@@ -65,8 +61,6 @@ namespace kiedis
     {
         struct promise_type
         {
-            std::coroutine_handle<> co_handle;
-
             Task get_return_object()
             {
                 return Task{std::coroutine_handle<promise_type>::from_promise(*this)};
@@ -77,7 +71,7 @@ namespace kiedis
             }
             auto final_suspend() noexcept
             {
-                return std::suspend_always{};
+                return std::suspend_never{};
             }
             void return_void()
             {
@@ -102,10 +96,6 @@ namespace kiedis
 
         ~Task() noexcept
         {
-            if (co_handle)
-            {
-                co_handle.destroy();
-            }
         }
         bool next()
         {

@@ -22,25 +22,13 @@ namespace kiedis
 
     std::tuple<std::string, bool> ReadFuture::await_resume()
     {
-        if (connection_close)
-        {
-            return {"", false};
-        }
         std::array<char, 1024> buf;
         auto ret = recv(fd, buf.data(), buf.size(), 0);
-        {
-            connection_close = true;
-        }
         if (ret <= 0)
         {
             return {"", false};
         };
         return {std::string{buf.data(), static_cast<unsigned long>(ret)}, true};
-    }
-
-    bool ReadFuture::valid()
-    {
-        return !connection_close;
     }
 
     WriteFuture::WriteFuture(int fd, std::coroutine_handle<> &h, std::string content) : fd(fd), content(std::move(content)), handle(h) {}
@@ -58,23 +46,13 @@ namespace kiedis
 
     std::tuple<unsigned long, bool> WriteFuture::await_resume()
     {
-        if (connection_close)
-        {
-            return {0, false};
-        }
         auto ret = send(fd, content.data(), content.size(), 0);
-        if (ret == 0)
+        if (ret <= 0)
         {
-            connection_close = true;
             return {0, false};
         }
 
         return {ret, true};
-    }
-
-    bool WriteFuture::valid()
-    {
-        return !connection_close;
     }
 
     AcceptFuture::AcceptFuture(int fd, std::coroutine_handle<> &h) : fd(fd), handle(h) {}
@@ -92,11 +70,6 @@ namespace kiedis
 
     std::tuple<int, bool> AcceptFuture::await_resume()
     {
-
-        if (connection_close)
-        {
-            return {0, false};
-        }
         sockaddr_in address{};
         socklen_t len = 0;
         auto sock = accept(fd, reinterpret_cast<sockaddr*>(&address), &len);
@@ -105,11 +78,6 @@ namespace kiedis
             return {0, false};
         }
         return {sock, true};
-    }
-
-    bool AcceptFuture::valid()
-    {
-        return !connection_close;
     }
 
 } // namespace kiedis

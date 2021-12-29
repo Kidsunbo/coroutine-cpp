@@ -34,6 +34,7 @@ namespace kiedis
         bool connect(std::string_view ip, unsigned short port);
         bool bind(unsigned short port, int listen_max = 1024);
         IOContext& get_context();
+        void close();
 
         AcceptFuture accept();
         ReadFuture read();

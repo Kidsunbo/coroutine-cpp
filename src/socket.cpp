@@ -13,6 +13,13 @@ namespace kiedis
         if (!read_co_handle.done())
         {
             read_co_handle.resume();
+            epoll_event ev{};
+            ev.data.ptr = this;
+            ev.events = EPOLLOUT;
+            if (auto ret = epoll_ctl(this->get_context().epoll_fd, EPOLL_CTL_MOD, this->socket_fd, &ev); ret < 0)
+            {
+                std::terminate();
+            }
         }
     }
 
@@ -21,13 +28,13 @@ namespace kiedis
         if (!write_co_handle.done())
         {
             write_co_handle.resume();
-        }
-        epoll_event ev{};
-        ev.data.ptr = this;
-        ev.events =  EPOLLIN;
-        if (auto ret = epoll_ctl(this->get_context().epoll_fd, EPOLL_CTL_MOD, this->socket_fd, &ev); ret < 0)
-        {
-            std::terminate();
+            epoll_event ev{};
+            ev.data.ptr = this;
+            ev.events = EPOLLIN;
+            if (auto ret = epoll_ctl(this->get_context().epoll_fd, EPOLL_CTL_MOD, this->socket_fd, &ev); ret < 0)
+            {
+                std::terminate();
+            }
         }
     }
 
@@ -115,7 +122,7 @@ namespace kiedis
             return false;
         }
         this->_is_server = true;
-        
+
         return true;
     }
 
@@ -128,6 +135,12 @@ namespace kiedis
     {
         return ctx;
     }
+
+    void Socket::close(){
+        ::close(socket_fd);
+        ctx.remove(this);
+    }
+
 
     AcceptFuture Socket::accept()
     {
