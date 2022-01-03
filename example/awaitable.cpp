@@ -1,24 +1,15 @@
-#include "awaitable.h"
+#include <coroutine>
+#include <thread>
 #include "coroutine.hpp"
-
 #include <iostream>
+#include <functional>
 
-kiedis::Task<void> get()
-{
-    for (int i = 0; i < 10; i++)
-    {
-        std::cout << "Before " << i << std::endl;
-        auto j = co_await kiedis::Awaitable{};
-        std::cout << "After " << i << std::endl;
-    }
+kiedis::Task<void> get(){
+    co_return;
 }
 
 int main()
 {
-    for (auto i = 0; i < 10; i++)
-    {
-        auto t = get();
-    }
-
+    std::cout<<std::hash<std::coroutine_handle<void>>{}(std::noop_coroutine())<<std::endl;
     return 0;
 }

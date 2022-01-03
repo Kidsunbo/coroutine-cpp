@@ -2,6 +2,8 @@
 
 #include <fcntl.h>
 
+#include <iostream>
+
 namespace kiedis
 {
     bool set_non_blocking(int sock)

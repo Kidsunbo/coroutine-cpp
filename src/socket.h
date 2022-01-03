@@ -2,8 +2,9 @@
 #define KIEDIS_SOCKET_H
 
 #include <string>
-#include "coroutine.hpp"
 #include "awaitable.h"
+#include "utils.h"
+
 
 namespace kiedis
 {
@@ -11,39 +12,22 @@ namespace kiedis
     class IOContext;
 
     class Socket {
-        friend class IOContext;
-        friend void co_spawn(Socket *ptr, Task<void> &&t);
-        friend void co_spawn(std::unique_ptr<Socket> ptr, Task<void> &&t);
-        friend void co_spawn(Socket &sock, Task<void> &&t);
-
         int socket_fd;
         IOContext& ctx;
-        Task<void> long_live_task;
-        bool _is_server = false;
-        std::coroutine_handle<> read_co_handle;
-        std::coroutine_handle<> write_co_handle;
-        std::coroutine_handle<> accept_co_handle;
+
 
         public:
-        
-        explicit Socket(IOContext& ctx);
-        Socket(IOContext& ctx, int fd);
-        Socket(Socket&& socket);
-        ~Socket()noexcept;
+        Socket(IOContext& ctx);
+        Socket(IOContext& ctx, int socket_fd);
+        Socket(Socket&& sock);
+        ~Socket();
 
         bool connect(std::string_view ip, unsigned short port);
         bool bind(unsigned short port, int listen_max = 1024);
-        IOContext& get_context();
-        void close();
-
+        
         AcceptFuture accept();
         ReadFuture read();
-        WriteFuture write(const std::string& content);
-
-        void resume_read();
-        void resume_write();
-        void resume_accpet();
-        bool is_server();
+        WriteFuture write(std::string content);
     };
 } // namespace kiedis
 

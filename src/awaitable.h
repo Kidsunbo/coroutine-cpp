@@ -7,16 +7,23 @@
 #include <memory>
 #include <queue>
 #include <tuple>
+#include "context.h"
+#include "utils.h"
+
 
 
 namespace kiedis
 {
+
+
+
     struct ReadFuture
     {
-        std::coroutine_handle<> &handle;
         const int fd;
+        const int epoll_fd;
+        EventData data = {.state = NextState::In};
 
-        explicit ReadFuture(int fd, std::coroutine_handle<> &h);
+        explicit ReadFuture(int fd, int epoll_fd);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<std::string, bool> await_resume();
@@ -25,10 +32,11 @@ namespace kiedis
     struct WriteFuture
     {
         std::string content;
-        std::coroutine_handle<> &handle;
         const int fd;
+        const int epoll_fd;
+        EventData data = {.state = NextState::Out};
 
-        WriteFuture(int fd, std::coroutine_handle<> &h, std::string content);
+        WriteFuture(int fd, std::string content, int epoll_fd);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<unsigned long, bool> await_resume();
@@ -37,12 +45,17 @@ namespace kiedis
     struct AcceptFuture
     {
         const int fd;
-        std::coroutine_handle<> &handle;
+        const int epoll_fd;
+        EventData data = {.state = NextState::In};
 
-        AcceptFuture(int fd, std::coroutine_handle<> &h);
+        AcceptFuture(int fd, int epoll_fd);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<int, bool> await_resume(); // return value: socket_fd, remote ip, remote port, success.
+
+        ~AcceptFuture(){
+            std::cout<<"~AcceptFuture"<<std::endl;
+        }
     };
 
 } // namespace kiedis
