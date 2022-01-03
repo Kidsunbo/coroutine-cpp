@@ -8,68 +8,27 @@
 namespace kiedis
 {
 
-    void Socket::resume_read()
-    {
-        if (!read_co_handle.done())
-        {
-            read_co_handle.resume();
-        }
-    }
-
-    void Socket::resume_write()
-    {
-        if (!write_co_handle.done())
-        {
-            write_co_handle.resume();
-        }
-        epoll_event ev{};
-        ev.data.ptr = this;
-        ev.events =  EPOLLIN;
-        if (auto ret = epoll_ctl(this->get_context().epoll_fd, EPOLL_CTL_MOD, this->socket_fd, &ev); ret < 0)
-        {
-            std::terminate();
-        }
-    }
-
-    void Socket::resume_accpet()
-    {
-        if (!accept_co_handle.done())
-        {
-            accept_co_handle.resume();
-        }
-    }
-
-    Socket::Socket(IOContext &ctx) : Socket(ctx, 0)
+    Socket::Socket(IOContext &ctx) : ctx(ctx)
     {
     }
 
-    Socket::Socket(IOContext &ctx, int fd) : ctx(ctx), socket_fd(fd), read_co_handle(std::noop_coroutine()), write_co_handle(std::noop_coroutine()), accept_co_handle(std::noop_coroutine()), long_live_task(Task<void>(nullptr))
-    {
-        if (fd == 0)
-        {
-            auto sock = socket(AF_INET, SOCK_STREAM, 0);
-            if (sock <= 0)
-            {
-                return;
-            }
-            socket_fd = sock;
-        }
-        set_non_blocking(socket_fd);
-    }
+    Socket::Socket(IOContext &ctx, int socket_fd) : ctx(ctx), socket_fd(socket_fd) {}
 
-    Socket::Socket(Socket &&socket) : ctx(socket.ctx), socket_fd(socket.socket_fd), read_co_handle(socket.read_co_handle), write_co_handle(socket.write_co_handle), accept_co_handle(socket.accept_co_handle), long_live_task(std::move(socket.long_live_task))
+    Socket::Socket(Socket &&sock) : ctx(sock.ctx), socket_fd(sock.socket_fd)
     {
-        socket.socket_fd = 0;
+        sock.socket_fd = 0;
     }
 
     Socket::~Socket() noexcept
     {
-        // No need to destroy read_co_handle and write_co_handle because it's lifetime is handled by the Task of the coroutine state. Or double free will occur.
+        if (socket_fd != 0)
+            close(socket_fd);
+        log("【KIE】");
     }
 
     bool Socket::connect(std::string_view ip, unsigned short port)
     {
-        if (socket_fd == 0)
+        if (socket_fd != 0)
         {
             return false;
         }
@@ -83,19 +42,32 @@ namespace kiedis
             return false;
         }
 
+        if (socket_fd = socket(AF_INET, SOCK_STREAM, 0); socket_fd < 0)
+        {
+            return false;
+        }
+
         if (::connect(socket_fd, reinterpret_cast<sockaddr *>(&address), sizeof(address)) < 0)
         {
             return false;
         }
 
+        set_non_blocking(socket_fd);
+
         return true;
     }
     bool Socket::bind(unsigned short port, int listen_max)
     {
-        if (socket_fd == 0)
+        if (socket_fd != 0)
         {
             return false;
         }
+
+        if (socket_fd = socket(AF_INET, SOCK_STREAM, 0); socket_fd < 0)
+        {
+            return false;
+        }
+
         int opt;
         if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
         {
@@ -114,32 +86,25 @@ namespace kiedis
         {
             return false;
         }
-        this->_is_server = true;
-        
+
+        set_non_blocking(socket_fd);
+
         return true;
-    }
-
-    bool Socket::is_server()
-    {
-        return _is_server;
-    }
-
-    IOContext &Socket::get_context()
-    {
-        return ctx;
     }
 
     AcceptFuture Socket::accept()
     {
-        return AcceptFuture{socket_fd, accept_co_handle};
+        return AcceptFuture{socket_fd, ctx.get_epoll_fd()};
     }
+
     ReadFuture Socket::read()
     {
-        return ReadFuture{socket_fd, read_co_handle};
+        return ReadFuture{socket_fd, ctx.get_epoll_fd()};
     }
-    WriteFuture Socket::write(const std::string &content)
+
+    WriteFuture Socket::write(std::string content)
     {
-        return WriteFuture{socket_fd, write_co_handle, content};
+        return WriteFuture{socket_fd, std::move(content), ctx.get_epoll_fd()};
     }
 
 } // namespace kiedis

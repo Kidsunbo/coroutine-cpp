@@ -1,114 +1,82 @@
 #include "context.h"
-#include "socket.h"
-
 #include <sys/epoll.h>
 #include <array>
-#include <cstring>
+#include <list>
+
+#include "coroutine.hpp"
+
+#include <iostream>
 
 namespace kiedis
 {
-    IOContext::IOContext(int timeout) : epoll_fd(epoll_create1(0)), stop(false), timeout(timeout)
+
+    IOContext::IOContext()
     {
+        if (epoll_fd = epoll_create1(0); epoll_fd < 0)
+        {
+            std::exit(1);
+        }
     }
 
-    IOContext::IOContext(IOContext &&ctx) : epoll_fd(ctx.epoll_fd), stop(ctx.stop), timeout(ctx.timeout), connections(std::move(ctx.connections)), last_word(std::move(ctx.last_word))
-    {
-    }
-
-    IOContext::~IOContext() noexcept
-    {
-    }
+    IOContext::~IOContext() noexcept {}
 
     void IOContext::run()
     {
         std::array<epoll_event, 256> events;
-        for(int i=0;i<10;i++)
+        while (true)
         {
-            auto fd_count = epoll_wait(this->epoll_fd, events.data(), events.size(), timeout);
+            auto fd_count = epoll_wait(this->epoll_fd, events.data(), events.size(), -1);
             if (fd_count == -1)
             {
-                last_word = strerror(errno);
-                return;
+                std::exit(2);
             }
             for (std::size_t i = 0; i < fd_count; i++)
             {
-                auto sock = static_cast<Socket *>(events[i].data.ptr);
-                if (events[i].events & EPOLLIN)
+                auto t = static_cast<EventData *>(events[i].data.ptr);
+                if (events[i].events & EPOLLERR || events[i].events & EPOLLHUP)
                 {
-                    if (sock->is_server())
-                    {
-                        sock->resume_accpet();
-                    }
-                    else
-                    {
-                        sock->resume_read();
-                    }
+                    log(t, t->h.address());
+                    t->state = NextState::Error;
+                    t->h.resume();
                 }
-                if (events[i].events & EPOLLOUT)
+                else if (events[i].events & EPOLLIN)
                 {
-                    sock->resume_write();
+                    log(t, t->h.address());
+                    t->state = NextState::In;
+                    t->h.resume();
+                }
+                else if (events[i].events & EPOLLOUT)
+                {
+                    log(t, t->h.address());
+                    t->state = NextState::Out;
+                    t->h.resume();
                 }
             }
         }
     }
 
-    const std::string &IOContext::get_last_word()
+    int IOContext::get_epoll_fd()
     {
-        return last_word;
+        return epoll_fd;
     }
 
-    void IOContext::add(Socket *sock)
+    void remove_from_context(IOContext &ctx, std::coroutine_handle<> h)
     {
-        epoll_event ev{};
-        ev.data.ptr = sock;
-        ev.events = EPOLLIN | EPOLLOUT;
-        if (auto ret = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock->socket_fd, &ev); ret < 0)
-        {
-            std::terminate();
-        }
-        connections.push_back(std::unique_ptr<Socket>(sock));
+        ctx.tasks.erase(h);
     }
 
-    void IOContext::remove(Socket *sock)
+    void add_to_context(IOContext &ctx, Task<void> &&t)
     {
-        epoll_event ev{};
-        ev.data.ptr = sock;
-        ev.events = EPOLLIN | EPOLLOUT;
-        if (auto ret = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, sock->socket_fd, &ev); ret < 0)
-        {
-            std::terminate();
-        }
-        for (auto iter = connections.begin(); iter != connections.end(); iter++)
-        {
-            if (iter->get() == sock)
-            {
-                connections.erase(iter);
-                break;
-            }
-        }
+        auto co_handle = t.co_handle;
+        ctx.tasks.insert({co_handle, std::make_unique<Task<void>>(std::move(t))});
     }
 
-    void co_spawn(Socket *ptr, Task<void> &&t)
+    void co_spawn(IOContext &ctx, Task<void> &&t)
     {
-        ptr->long_live_task = std::move(t);
-        ptr->get_context().add(ptr);
-    }
-
-    void co_spawn(std::unique_ptr<Socket> ptr, Task<void> &&t)
-    {
-        co_spawn(ptr.release(), std::move(t));
-    }
-
-    void co_spawn(Socket &sock, Task<void> &&t)
-    {
-        sock.long_live_task = std::move(t);
-        epoll_event ev{};
-        ev.data.ptr = &sock;
-        ev.events = EPOLLIN | EPOLLOUT;
-        if (auto ret = epoll_ctl(sock.get_context().epoll_fd, EPOLL_CTL_ADD, sock.socket_fd, &ev); ret < 0)
-        {
-            std::terminate();
-        }
+        t.co_handle.promise().set_context(ctx);
+        auto co_handle = t.co_handle;
+        add_to_context(ctx, std::move(t));
+        co_handle.resume();
     }
 
 } // namespace kiedis

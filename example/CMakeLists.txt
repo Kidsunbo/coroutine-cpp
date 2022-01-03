@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.0.0)
 
+add_compile_options(-fcoroutines)
+add_link_options(-fcoroutines)
+
 add_executable(coroutine coroutine.cpp)
 target_include_directories(coroutine PUBLIC ../src)
 target_link_libraries(coroutine PUBLIC kiedis)

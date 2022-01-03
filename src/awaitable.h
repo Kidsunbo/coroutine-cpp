@@ -7,63 +7,54 @@
 #include <memory>
 #include <queue>
 #include <tuple>
+#include "context.h"
+#include "utils.h"
+
 
 
 namespace kiedis
 {
+
+
+
     struct ReadFuture
     {
-        std::coroutine_handle<> &handle;
         const int fd;
-        bool connection_close = false;
+        const int epoll_fd;
+        EventData data = {.state = NextState::In};
 
-        explicit ReadFuture(int fd, std::coroutine_handle<> &h);
+        explicit ReadFuture(int fd, int epoll_fd);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<std::string, bool> await_resume();
-        bool valid();
     };
 
     struct WriteFuture
     {
         std::string content;
-        std::coroutine_handle<> &handle;
         const int fd;
-        bool connection_close = false;
+        const int epoll_fd;
+        EventData data = {.state = NextState::Out};
 
-        WriteFuture(int fd, std::coroutine_handle<> &h, std::string content);
+        WriteFuture(int fd, std::string content, int epoll_fd);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<unsigned long, bool> await_resume();
-        bool valid();
     };
 
     struct AcceptFuture
     {
         const int fd;
-        std::coroutine_handle<> &handle;
-        bool connection_close = false;
+        const int epoll_fd;
+        EventData data = {.state = NextState::In};
 
-        AcceptFuture(int fd, std::coroutine_handle<> &h);
+        AcceptFuture(int fd, int epoll_fd);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<int, bool> await_resume(); // return value: socket_fd, remote ip, remote port, success.
-        bool valid();
-    };
 
-    struct Awaitable
-    {
-        bool await_ready()
-        {
-            return false;
-        }
-        bool await_suspend(std::coroutine_handle<> h)
-        {
-            return true;
-        }
-        int await_resume()
-        {
-            return 10;
+        ~AcceptFuture(){
+            std::cout<<"~AcceptFuture"<<std::endl;
         }
     };
 
