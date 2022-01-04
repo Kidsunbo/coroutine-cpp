@@ -11,12 +11,13 @@ kiedis::Task<void> echo(kiedis::Socket sock)
         auto [content, ok_read] = co_await sock.read();
         if (!ok_read)
         {
+            kiedis::log("return code:", ok_read);
             co_return;
         }
         auto [len, ok_write] = co_await sock.write(content);
         if (!ok_write)
         {
-            kiedis::log("", ok_write);
+            kiedis::log("return code:", ok_write);
             co_return;
         }
     }
@@ -32,7 +33,6 @@ kiedis::Task<void> listen(kiedis::Socket sock)
         {
             co_return;
         }
-        std::cout<<"???"<<std::endl;
         kiedis::co_spawn(ctx, echo(kiedis::Socket{ctx,sock_fd}));
     }
 }
