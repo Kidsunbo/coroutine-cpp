@@ -27,6 +27,7 @@ namespace kiedis
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<std::string, bool> await_resume();
+        ~ReadFuture() noexcept;
     };
 
     struct WriteFuture
@@ -40,6 +41,7 @@ namespace kiedis
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
         std::tuple<unsigned long, bool> await_resume();
+        ~WriteFuture() noexcept;
     };
 
     struct AcceptFuture
@@ -51,11 +53,8 @@ namespace kiedis
         AcceptFuture(int fd, int epoll_fd);
         bool await_ready();
         bool await_suspend(std::coroutine_handle<> h);
-        std::tuple<int, bool> await_resume(); // return value: socket_fd, remote ip, remote port, success.
-
-        ~AcceptFuture(){
-            std::cout<<"~AcceptFuture"<<std::endl;
-        }
+        std::tuple<int, bool> await_resume();
+        ~AcceptFuture() noexcept;
     };
 
 } // namespace kiedis
