@@ -38,7 +38,7 @@ namespace kiedis
         {
             return {"", false};
         }
-        
+
         std::array<char, 1024> buf;
         auto ret = recv(fd, buf.data(), buf.size(), 0);
         if (ret <= 0)
@@ -46,14 +46,16 @@ namespace kiedis
             log(buf.size());
             return {"", false};
         };
+        return {std::string{buf.data(), static_cast<unsigned long>(ret)}, true};
+    }
+
+    ReadFuture::~ReadFuture() noexcept
+    {
         auto ret_epoll = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, nullptr);
         if (ret_epoll < 0)
         {
-            log(buf.size());
-            return {"", false};
+            log("return code is not zero");
         }
-        log(buf.size());
-        return {std::string{buf.data(), static_cast<unsigned long>(ret)}, true};
     }
 
     WriteFuture::WriteFuture(int fd, std::string content, int epoll_fd) : fd(fd), content(std::move(content)), epoll_fd(epoll_fd) {}
@@ -96,18 +98,21 @@ namespace kiedis
             log(content, ret);
             return {0, false};
         }
-        ret = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, nullptr);
-        if (ret < 0)
-        {
-            log("", ret);
-            return {0, false};
-        }
-        log("", ret);
         return {ret, true};
     }
 
-    AcceptFuture::AcceptFuture(int fd, int epoll_fd) : fd(fd), epoll_fd(epoll_fd) {
-        std::cout <<"AcceptFuture"<<std::endl;
+    WriteFuture::~WriteFuture() noexcept
+    {
+        auto ret_epoll = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, nullptr);
+        if (ret_epoll < 0)
+        {
+            log("return code is not zero");
+        }
+    }
+
+    AcceptFuture::AcceptFuture(int fd, int epoll_fd) : fd(fd), epoll_fd(epoll_fd)
+    {
+        std::cout << "AcceptFuture" << std::endl;
     }
 
     bool AcceptFuture::await_ready()
@@ -144,6 +149,15 @@ namespace kiedis
         }
         log("hello");
         return {sock, true};
+    }
+
+    AcceptFuture::~AcceptFuture()
+    {
+        auto ret_epoll = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, nullptr);
+        if (ret_epoll < 0)
+        {
+            log("return code is not zero");
+        }
     }
 
 } // namespace kiedis

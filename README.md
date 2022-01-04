@@ -1,16 +1,16 @@
 # Kiedis
 
-Kiedis is a wrapper for epoll and socket which is implemented with C++20. It supports the syntax of coroutine and can be easily use out of box.
+Kiedis is a wrapper for epoll and socket which is implemented with C++20. It supports the syntax of coroutine and can be easily used out of box.
 
 ## Feature
 - coroutine supported
 
 ## Usage
 
-If you use CMake for your project. All you need is add some code to your `CMakeLists.txt` and add `kiedis` as a dependency.
+If you use CMake for your project. All you need is adding some code to your `CMakeLists.txt` and add `kiedis` as a dependency.
 
 ```cmake
-    add_subdirectory(kiedis)
+    add_subdirectory(Kiedis)
 
     target_link_library(<your_project> PUBLIC kiedis)
 ```
