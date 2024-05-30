@@ -1,5 +1,5 @@
-#ifndef KIEDIS_COROUTINE_HPP
-#define KIEDIS_COROUTINE_HPP
+#ifndef COROUTINECPP_COROUTINE_HPP
+#define COROUTINECPP_COROUTINE_HPP
 
 #include <coroutine>
 #include <utility>
@@ -16,7 +16,7 @@ namespace this_core
 constexpr excutor_t excutor;
 } // namespace this_core
 
-namespace kiedis
+namespace co_cpp
 {
 
     class IOContext;
@@ -126,7 +126,7 @@ namespace kiedis
 
         T value()
         {
-            return co_handle.promise().value;
+            co_handle.promise().
         }
     };
 
@@ -165,7 +165,7 @@ namespace kiedis
         }
     };
 
-} // namespace kiedis
+} // namespace co_cpp
 
 namespace std
 {

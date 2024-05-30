@@ -1,7 +1,7 @@
 #include <coroutine.hpp>
 #include <iostream>
 
-kiedis::Task<int> get(){
+co_cpp::Task<int> get(){
     for(int i=0;i<10;i++){
         co_await std::suspend_always{};
         std::cout<<"inner "<<i<<std::endl;

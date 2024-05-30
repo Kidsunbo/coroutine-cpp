@@ -1,10 +1,10 @@
-#ifndef KIEDIS_UTILS_H
-#define KIEDIS_UTILS_H
+#ifndef COROUTINECPP_UTILS_H
+#define COROUTINECPP_UTILS_H
 
 #include <source_location>
 #include <iostream>
 
-namespace kiedis
+namespace co_cpp
 {
     // set the file discriptor non-blocking. return false if failed
     bool set_non_blocking(int sock);
@@ -22,6 +22,6 @@ namespace kiedis
 
     template <typename... T>
     log(T &&...args) -> log<T...>;
-} // namespace kiedis
+} // namespace co_cpp
 
 #endif

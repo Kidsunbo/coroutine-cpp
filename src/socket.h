@@ -1,12 +1,12 @@
-#ifndef KIEDIS_SOCKET_H
-#define KIEDIS_SOCKET_H
+#ifndef COROUTINECPP_SOCKET_H
+#define COROUTINECPP_SOCKET_H
 
 #include <string>
 #include "awaitable.h"
 #include "utils.h"
 
 
-namespace kiedis
+namespace co_cpp
 {
 
     class IOContext;
@@ -29,6 +29,6 @@ namespace kiedis
         ReadFuture read();
         WriteFuture write(std::string content);
     };
-} // namespace kiedis
+} // namespace co_cpp
 
 #endif

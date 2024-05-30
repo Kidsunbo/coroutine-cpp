@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-namespace kiedis
+namespace co_cpp
 {
 
     IOContext::IOContext()
@@ -79,4 +79,4 @@ namespace kiedis
         co_handle.resume();
     }
 
-} // namespace kiedis
+} // namespace co_cpp

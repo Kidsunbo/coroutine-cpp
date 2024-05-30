@@ -5,12 +5,12 @@ add_link_options(-fcoroutines)
 
 add_executable(coroutine coroutine.cpp)
 target_include_directories(coroutine PUBLIC ../src)
-target_link_libraries(coroutine PUBLIC kiedis)
+target_link_libraries(coroutine PUBLIC coroutinecpp)
 
 add_executable(awaitable awaitable.cpp)
 target_include_directories(awaitable PUBLIC ../src)
-target_link_libraries(awaitable PUBLIC kiedis)
+target_link_libraries(awaitable PUBLIC coroutinecpp)
 
 add_executable(socket socket.cpp)
 target_include_directories(socket PUBLIC ../src)
-target_link_libraries(socket PUBLIC kiedis)
+target_link_libraries(socket PUBLIC coroutinecpp)

@@ -1,5 +1,5 @@
-#ifndef KIEDIS_CONTEXT_H
-#define KIEDIS_CONTEXT_H
+#ifndef COROUTINECPP_CONTEXT_H
+#define COROUTINECPP_CONTEXT_H
 
 /**
  * This file define a class wrapper for epoll to handle the context and file descriptor for the whole library.
@@ -13,7 +13,7 @@
 
 #include "coroutine.hpp"
 
-namespace kiedis
+namespace co_cpp
 {
 
 
@@ -49,6 +49,6 @@ namespace kiedis
 
     };
 
-} // namespace kiedis
+} // namespace co_cpp
 
 #endif

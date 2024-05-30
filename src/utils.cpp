@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-namespace kiedis
+namespace co_cpp
 {
     bool set_non_blocking(int sock)
     {
@@ -21,4 +21,4 @@ namespace kiedis
         return true;
     }
 
-} // namespace kiedis
+} // namespace co_cpp

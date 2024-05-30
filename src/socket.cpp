@@ -5,7 +5,7 @@
 #include <sys/epoll.h>
 #include "context.h"
 
-namespace kiedis
+namespace co_cpp
 {
 
     Socket::Socket(IOContext &ctx) : ctx(ctx)
@@ -107,4 +107,4 @@ namespace kiedis
         return WriteFuture{socket_fd, std::move(content), ctx.get_epoll_fd()};
     }
 
-} // namespace kiedis
+} // namespace co_cpp

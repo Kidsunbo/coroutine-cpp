@@ -1,5 +1,5 @@
-#ifndef KIEDIS_AWAITABLE_H
-#define KIEDIS_AWAITABLE_H
+#ifndef COROUTINECPP_AWAITABLE_H
+#define COROUTINECPP_AWAITABLE_H
 
 #include <string>
 #include <coroutine>
@@ -12,7 +12,7 @@
 
 
 
-namespace kiedis
+namespace co_cpp
 {
 
 
@@ -57,6 +57,6 @@ namespace kiedis
         ~AcceptFuture() noexcept;
     };
 
-} // namespace kiedis
+} // namespace co_cpp
 
 #endif

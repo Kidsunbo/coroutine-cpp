@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(kiedis VERSION 0.1.0)
+project(coroutinecpp VERSION 0.1.0)
 
 include(CTest)
 
@@ -14,7 +14,7 @@ if(ENABLE_SANITIZER)
 endif()
 
 aux_source_directory(src SOURCE)
-add_library(kiedis ${SOURCE})
+add_library(coroutinecpp ${SOURCE})
 
 if(ENABLE_EXAMPLE)
     add_subdirectory(example)

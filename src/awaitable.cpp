@@ -4,7 +4,7 @@
 #include <netinet/in.h>
 #include <sys/epoll.h>
 
-namespace kiedis
+namespace co_cpp
 {
 
     ReadFuture::ReadFuture(int fd, int epoll_fd) : fd(fd), epoll_fd(epoll_fd) {}
@@ -160,4 +160,4 @@ namespace kiedis
         }
     }
 
-} // namespace kiedis
+} // namespace co_cpp
